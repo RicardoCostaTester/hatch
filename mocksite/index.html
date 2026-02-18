@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TradeFlow - Trading Terminal</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d1117; color: #c9d1d9; }
+    .header { background: #161b22; padding: 16px 24px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
+    .logo { font-size: 20px; font-weight: 600; color: #58a6ff; }
+    .nav-links a { color: #8b949e; text-decoration: none; margin-left: 20px; }
+    .nav-links a:hover { color: #c9d1d9; }
+    .container { display: flex; height: calc(100vh - 65px); }
+    .sidebar { width: 250px; background: #161b22; padding: 20px; border-right: 1px solid #30363d; }
+    .sidebar h3 { font-size: 12px; text-transform: uppercase; color: #8b949e; margin-bottom: 12px; }
+    .menu-item { padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-bottom: 4px; }
+    .menu-item:hover { background: #21262d; }
+    .menu-item.active { background: #21262d; color: #58a6ff; }
+    .main { flex: 1; padding: 20px; overflow-y: auto; }
+    .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+    .card-header { display: flex; justify-content: space-between; margin-bottom: 16px; }
+    .card-title { font-size: 16px; font-weight: 600; }
+    .price { font-size: 24px; font-weight: 600; color: #3fb950; }
+    .price.down { color: #f85149; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; margin-bottom: 6px; font-size: 14px; }
+    .form-group input, .form-group select { width: 100%; padding: 10px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; }
+    .btn { padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: 500; }
+    .btn-primary { background: #238636; color: white; }
+    .btn-primary:hover { background: #2ea043; }
+    .btn-secondary { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; }
+    .btn-danger { background: #da3633; color: white; }
+    .orders-table { width: 100%; border-collapse: collapse; }
+    .orders-table th, .orders-table td { padding: 12px; text-align: left; border-bottom: 1px solid #30363d; }
+    .orders-table th { color: #8b949e; font-weight: 500; font-size: 12px; }
+    .status { padding: 4px 8px; border-radius: 12px; font-size: 12px; }
+    .status.pending { background: #3d3000; color: #d29922; }
+    .status.filled { background: #0d3117; color: #3fb950; }
+    .status.cancelled { background: #3d1117; color: #f85149; }
+    .error-msg { color: #f85149; font-size: 12px; margin-top: 4px; display: none; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo">TradeFlow</div>
+    <nav class="nav-links">
+      <a href="#dashboard">Dashboard</a>
+      <a href="#orders">Orders</a>
+      <a href="#portfolio">Portfolio</a>
+      <a href="#settings">Settings</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <aside class="sidebar">
+      <h3>Markets</h3>
+      <div class="menu-item active">US Stocks</div>
+      <div class="menu-item">Crypto</div>
+      <div class="menu-item">Forex</div>
+      <div class="menu-item">Commodities</div>
+      
+      <h3 style="margin-top: 20px;">Actions</h3>
+      <div class="menu-item" id="new-order-btn">New Order</div>
+      <div class="menu-item" id="quick-trade-btn">Quick Trade</div>
+    </aside>
+
+    <main class="main">
+      <!-- Dashboard Section -->
+      <section id="dashboard-section">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">AAPL - Apple Inc.</span>
+            <span class="price" id="aapl-price">$178.52</span>
+          </div>
+          <p style="color: #8b949e; font-size: 14px;">NASDAQ · Technology</p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Order Form</span>
+          </div>
+          <form id="order-form">
+            <div class="form-group">
+              <label for="symbol-input">Symbol</label>
+              <input type="text" id="symbol-input" placeholder="AAPL" data-testid="symbol-field">
+            </div>
+            <div class="form-group">
+              <label for="order-type">Order Type</label>
+              <select id="order-type">
+                <option value="market">Market</option>
+                <option value="limit">Limit</option>
+                <option value="stop">Stop</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="quantity-input">Quantity</label>
+              <input type="number" id="quantity-input" placeholder="100" min="1">
+            </div>
+            <div class="form-group" id="limit-price-group">
+              <label for="limit-price">Limit Price</label>
+              <input type="number" id="limit-price" placeholder="178.50" step="0.01">
+            </div>
+            <button type="submit" class="btn btn-primary" id="submit-order-btn">Submit Order</button>
+            <div class="error-msg" id="order-error">Please fill all required fields</div>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Recent Orders</span>
+          </div>
+          <table class="orders-table">
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th>Type</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="orders-tbody">
+              <tr>
+                <td>TSLA</td>
+                <td>Limit</td>
+                <td>50</td>
+                <td>$245.00</td>
+                <td><span class="status filled">Filled</span></td>
+              </tr>
+              <tr>
+                <td>NVDA</td>
+                <td>Market</td>
+                <td>25</td>
+                <td>$890.00</td>
+                <td><span class="status filled">Filled</span></td>
+              </tr>
+              <tr>
+                <td>MSFT</td>
+                <td>Stop</td>
+                <td>100</td>
+                <td>$410.00</td>
+                <td><span class="status pending">Pending</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Success Modal -->
+      <div class="card hidden" id="success-modal">
+        <h2 style="color: #3fb950; margin-bottom: 16px;">Order Submitted!</h2>
+        <p>Your order has been placed successfully.</p>
+        <button class="btn btn-secondary" id="close-modal-btn" style="margin-top: 16px;">Close</button>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const form = document.getElementById('order-form');
+    const errorMsg = document.getElementById('order-error');
+    const successModal = document.getElementById('success-modal');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const orderType = document.getElementById('order-type');
+    const limitPriceGroup = document.getElementById('limit-price-group');
+
+    // Toggle limit price visibility
+    orderType.addEventListener('change', () => {
+      limitPriceGroup.style.display = orderType.value === 'limit' ? 'block' : 'none';
+    });
+
+    // Form submission
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const symbol = document.getElementById('symbol-input').value;
+      const qty = document.getElementById('quantity-input').value;
+
+      if (!symbol || !qty) {
+        errorMsg.style.display = 'block';
+        return;
+      }
+
+      errorMsg.style.display = 'none';
+      document.getElementById('dashboard-section').classList.add('hidden');
+      successModal.classList.remove('hidden');
+    });
+
+    closeModalBtn.addEventListener('click', () => {
+      successModal.classList.add('hidden');
+      document.getElementById('dashboard-section').classList.remove('hidden');
+      form.reset();
+    });
+
+    // Simulate price changes
+    setInterval(() => {
+      const priceEl = document.getElementById('aapl-price');
+      const currentPrice = parseFloat(priceEl.textContent.replace('$', ''));
+      const change = (Math.random() - 0.5) * 2;
+      const newPrice = (currentPrice + change).toFixed(2);
+      priceEl.textContent = '$' + newPrice;
+      priceEl.className = change > 0 ? 'price' : 'price down';
+    }, 3000);
+  </script>
+</body>
+</html>
